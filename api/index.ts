@@ -27,9 +27,9 @@ const umi = createUmi('https://api.devnet.solana.com');
         fastify.get("/", async() => {
             const response: ActionGetResponse = {
                 icon: `https://arweave.net/U8FW9J2Ik2SKbJOID6JIdv21hW8pqWLx-4VUie-gYig`,
-                description: "lets ruggify rugged the new rug by minting a rug lol",
+                description: "Mint an ancient rug now and become a rug collection master!",
                 label: "Rug it!",
-                title: "Mint this Rug",
+                title: "Ancient Rug by ved08",
             } 
             return Response.json(response, {
                 headers: ACTIONS_CORS_HEADERS
