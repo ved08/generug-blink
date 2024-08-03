@@ -1,14 +1,19 @@
 import Fastify from "fastify";
 import cors from '@fastify/cors'
 import { ActionGetResponse, ActionPostRequest, ActionPostResponse, ACTIONS_CORS_HEADERS, createPostResponse } from "@solana/actions"
-import { clusterApiUrl, Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction, TransactionInstruction, TransactionMessage, VersionedMessage, VersionedTransaction } from "@solana/web3.js";
-import path from "path";
-import fs from "fs"
+import { TransactionInstruction,PublicKey, TransactionMessage, VersionedMessage, VersionedTransaction } from "@solana/web3.js";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
-import { createNoopSigner, generateSigner, Instruction, percentAmount, publicKey, signerIdentity, TransactionBuilder, transactionBuilder } from "@metaplex-foundation/umi";
+import { createNoopSigner, generateSigner, Instruction, percentAmount, publicKey, signerIdentity, TransactionBuilder } from "@metaplex-foundation/umi";
 import { createNft, mplTokenMetadata } from "@metaplex-foundation/mpl-token-metadata";
 import { mplCore } from "@metaplex-foundation/mpl-core";
-import {toWeb3JsInstruction, toWeb3JsKeypair, toWeb3JsTransaction} from "@metaplex-foundation/umi-web3js-adapters"
+import {toWeb3JsInstruction, toWeb3JsKeypair} from "@metaplex-foundation/umi-web3js-adapters"
+import { irysUploader } from "@metaplex-foundation/umi-uploader-irys";
+
+// Unused imports(code commented)
+import path from "path";
+import fs from "fs"
+import puppeteer from "puppeteer"
+
 
 const umi = createUmi('https://api.devnet.solana.com');
 
@@ -44,37 +49,83 @@ const umi = createUmi('https://api.devnet.solana.com');
         })
 
         fastify.post("/", async(req, res) => {
-            const connection = new Connection(clusterApiUrl("devnet"))
-            const nftUmi = createUmi("https://api.devnet.solana.com")
-            const mint = generateSigner(nftUmi)
+
+            // Initializing umi
             const umi = createUmi("https://api.devnet.solana.com")
             .use(mplCore())
             .use(mplTokenMetadata())
+            .use(irysUploader())
+            const body = await req.body as ActionPostRequest;
+            let account: PublicKey;
+            try {
+                account = new PublicKey(body.account)
+            } catch {
+                throw "Invalid account"
+            }
+            
+            const signer = createNoopSigner(publicKey(account))
+            const mint = generateSigner(umi)
+
+            umi.use(signerIdentity(signer))
+
+            // Generate a rug using puppeteer
+            // STILL TODO AS UPLOADER REQUIRES SIGNATURE BUT WE DONT HAVE SIGNATURE WITHOUT EXECUTING BLINK
+            // const browser = await puppeteer.launch({headless: true})
+            // const page = await browser.newPage()
+            // await page.goto("https://deanmlittle.github.io/generug/")
+            // await page.waitForSelector('canvas')
+            // const canvas = await page.$('canvas')
+            // if(canvas) {
+            //     const imageBuffer = await canvas.screenshot({encoding: "binary"})
+            //     // Create new rug.png
+            //     fs.writeFileSync('rug.png', imageBuffer)
+            // }
+
+            // Upload image
+            // const imageFile = fs.readFileSync(
+            //     path.join(__dirname, "rug.png")
+            // )
+            // const umiImageFile = createGenericFile(imageFile, 'rug.png', {
+            //     contentType: "image/png"
+            // })
+            // const imageUri = await umi.uploader.upload([umiImageFile]).catch(err => {throw new Error(err)})
+            // console.log(`Image URL: ${imageUri[0]}`)
+
+            // Upload Metadata
+            // const metadata = {
+            //     name: "Ancient Rug",
+            //     symbol: "RUG",
+            //     description: "An extremely rare ancient af rug minted using solana blink",
+            //     image: imageUri[0],
+            //     external_url: "https://x.com/ved08",
+            //     attributes: [
+            //         {
+            //             "trait_type": "Discovered",
+            //             "value": "69 BC"
+            //         },
+            //         {
+            //             "trait_type": "Found By",
+            //             "value": "ved08"
+            //         }
+            //     ]
+            // }
+            // const metadataUri = await umi.uploader.uploadJson(metadata).catch(err => {throw new Error(err)})
+            const metadataUri = "https://arweave.net/9ypjRmkaxsa5kZdmz0vDH3WcASN_VYW7LYNEeIEEhS4"
+            
             try {   
-                const body = await req.body as ActionPostRequest;
-                let account: PublicKey;
-                try {
-                    account = new PublicKey(body.account)
-                } catch {
-                    throw "Invalid account"
-                }
 
-                const signer = createNoopSigner(publicKey(account))
-                const nftSigner = generateSigner(umi)
-                umi.use(signerIdentity(signer))
-                // umi.use(signerIdentity(mint))
+                const blockhash = (await umi.rpc.getLatestBlockhash()).blockhash
 
-                const blockhash = (await connection.getLatestBlockhash()).blockhash
-                
-                const metadataUri = "https://arweave.net/9ypjRmkaxsa5kZdmz0vDH3WcASN_VYW7LYNEeIEEhS4"
+                // Create NFT transaction
                 const createNftTransaction: TransactionBuilder = createNft(
                     umi,
                     {
                         mint,
                         name: `WBA Ancient Rug`,
+                        symbol: "RUG",
                         sellerFeeBasisPoints: percentAmount(1.2),
-                        uri: metadataUri
-                        
+                        uri: metadataUri,
+
                     }
                 )
                 createNftTransaction.setBlockhash(blockhash)
@@ -96,10 +147,11 @@ const umi = createUmi('https://api.devnet.solana.com');
                 // Make a versioned Transaction
                 const transactionv0 = new VersionedTransaction(v0message)
 
+                // Convert umi keypair to web3.js keypair
                 const mintKeypair = toWeb3JsKeypair(mint)
                 transactionv0.sign([mintKeypair])
               
-                
+                // Create Payload 
                 const payload: ActionPostResponse = await createPostResponse({
                     fields: {
                         transaction: transactionv0,

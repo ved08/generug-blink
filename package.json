@@ -14,7 +14,8 @@
     "@solana/actions": "^1.6.1",
     "@solana/web3.js": "^1.95.2",
     "canvas-renderer": "^2.2.1",
-    "fastify": "^4.28.1"
+    "fastify": "^4.28.1",
+    "puppeteer": "^22.15.0"
   },
   "devDependencies": {
     "@types/node": "^22.1.0",
