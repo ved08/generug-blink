@@ -46,3 +46,8 @@ umi.use(signerIdentity(signer));
     const metadataUri = await umi.uploader.uploadJson(metadata).catch(err => {throw new Error(err)})
     console.log(`JSON uploaded at: ${metadataUri}`)
 })()
+
+
+
+// imageUri = "https://arweave.net/U8FW9J2Ik2SKbJOID6JIdv21hW8pqWLx-4VUie-gYig"
+// metadataUri = "https://arweave.net/9ypjRmkaxsa5kZdmz0vDH3WcASN_VYW7LYNEeIEEhS4"

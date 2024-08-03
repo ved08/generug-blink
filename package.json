@@ -24,7 +24,7 @@
     "typescript": "^5.5.4"
   },
   "scripts": {
-    "start": "nodemon index.ts",
+    "start": "nodemon blink.ts",
     "upload_image": "ts-node upload_image.ts"
   }
 }
