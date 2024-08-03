@@ -14,11 +14,15 @@ umi.use(irysUploader());
 umi.use(signerIdentity(signer));
 
 
-const imageFile = fs.readFileSync(
-    path.join(__dirname, "rug.png")
-)
-const umiImageFile = createGenericFile(imageFile, 'rug.png', {
-    contentType: "image/png"
-})
+(async() => {
+    const imageFile = fs.readFileSync(
+        path.join(__dirname, "rug.png")
+    )
+    const umiImageFile = createGenericFile(imageFile, 'rug.png', {
+        contentType: "image/png"
+    })
+    
+    const imageUri = await umi.uploader.upload([umiImageFile]).catch(err => {throw new Error(err)})
 
-const imageUri = 
+    console.log(`Image URL: ${imageUri[0]}`)
+})()
