@@ -13,8 +13,10 @@ import { irysUploader } from "@metaplex-foundation/umi-uploader-irys";
 import path from "path";
 import fs from "fs"
 import puppeteer from "puppeteer"
-import wallet from "../wallet"
-
+// import wallet from "../wallet"
+import dotenv from "dotenv"
+dotenv.config()
+const wallet = JSON.parse(process.env.WALLET || "")
 
 const umi = createUmi('https://api.devnet.solana.com');
 const umiBackend = createUmi("https://api.devnet.solana.com");
