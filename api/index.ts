@@ -3,7 +3,7 @@ import cors from '@fastify/cors'
 import { ActionGetResponse, ActionPostRequest, ActionPostResponse, ACTIONS_CORS_HEADERS, createPostResponse } from "@solana/actions"
 import { TransactionInstruction,PublicKey, TransactionMessage, VersionedMessage, VersionedTransaction } from "@solana/web3.js";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
-import { createGenericFile, createNoopSigner, createSignerFromKeypair, generateSigner, Instruction, percentAmount, publicKey, signerIdentity, TransactionBuilder } from "@metaplex-foundation/umi";
+import { createNoopSigner, generateSigner, Instruction, percentAmount, publicKey, signerIdentity, TransactionBuilder } from "@metaplex-foundation/umi";
 import { createNft, mplTokenMetadata } from "@metaplex-foundation/mpl-token-metadata";
 import { mplCore } from "@metaplex-foundation/mpl-core";
 import {toWeb3JsInstruction, toWeb3JsKeypair} from "@metaplex-foundation/umi-web3js-adapters"
@@ -13,13 +13,9 @@ import { irysUploader } from "@metaplex-foundation/umi-uploader-irys";
 import path from "path";
 import fs from "fs"
 import puppeteer from "puppeteer"
-// import wallet from "../wallet"
-import dotenv from "dotenv"
-dotenv.config()
-const wallet = JSON.parse(process.env.WALLET || "")
+
 
 const umi = createUmi('https://api.devnet.solana.com');
-const umiBackend = createUmi("https://api.devnet.solana.com");
 
 
 (
@@ -55,10 +51,10 @@ const umiBackend = createUmi("https://api.devnet.solana.com");
         fastify.post("/", async(req, res) => {
 
             // Initializing umi
-            umi
+            const umi = createUmi("https://api.devnet.solana.com")
             .use(mplCore())
             .use(mplTokenMetadata())
-            umiBackend.use(irysUploader())
+            .use(irysUploader())
             const body = await req.body as ActionPostRequest;
             let account: PublicKey;
             try {
@@ -69,13 +65,8 @@ const umiBackend = createUmi("https://api.devnet.solana.com");
             
             const signer = createNoopSigner(publicKey(account))
             const mint = generateSigner(umi)
-            umi.use(signerIdentity(signer))
-            
 
-            const backendKeypair = umiBackend.eddsa.createKeypairFromSecretKey(new Uint8Array(wallet))
-            console.log(backendKeypair.publicKey)
-            const backendSigner = createSignerFromKeypair(umiBackend, backendKeypair)
-            umiBackend.use(signerIdentity(backendSigner))
+            umi.use(signerIdentity(signer))
 
             // Generate a rug using puppeteer
             // STILL TODO AS UPLOADER REQUIRES SIGNATURE BUT WE DONT HAVE SIGNATURE WITHOUT EXECUTING BLINK
@@ -90,55 +81,36 @@ const umiBackend = createUmi("https://api.devnet.solana.com");
             //     fs.writeFileSync('rug.png', imageBuffer)
             // }
 
-
-            const browser = await puppeteer.launch({ headless: true });
-        const page = await browser.newPage();
-
-        const client = await page.target().createCDPSession();
-        await client.send('Page.setDownloadBehavior', {
-          behavior: 'allow',
-          downloadPath: path.join(__dirname, "rug.png"),
-        });
-
-        // Configure the download behavior
-        await page.goto('https://deanmlittle.github.io/generug/', {
-          waitUntil: 'networkidle2',
-        });
-
-        const searchResultSelector = 'a#downloadLink';
-        await page.waitForSelector(searchResultSelector);
-        await page.click(searchResultSelector);
-
             // Upload image
-            const imageFile = fs.readFileSync(
-                path.join(__dirname, "/rug.png/generug.png")
-            )
-            const umiImageFile = createGenericFile(imageFile, 'rug.png', {
-                contentType: "image/png"
-            })
-            const imageUri = await umiBackend.uploader.upload([umiImageFile]).catch(err => {throw new Error(err)})
-            console.log(`Image URL: ${imageUri[0]}`)
+            // const imageFile = fs.readFileSync(
+            //     path.join(__dirname, "rug.png")
+            // )
+            // const umiImageFile = createGenericFile(imageFile, 'rug.png', {
+            //     contentType: "image/png"
+            // })
+            // const imageUri = await umi.uploader.upload([umiImageFile]).catch(err => {throw new Error(err)})
+            // console.log(`Image URL: ${imageUri[0]}`)
 
             // Upload Metadata
-            const metadata = {
-                name: "Ancient Rug",
-                symbol: "RUG",
-                description: "An extremely rare ancient af rug minted using solana blink",
-                image: imageUri[0],
-                external_url: "https://x.com/ved08",
-                attributes: [
-                    {
-                        "trait_type": "Discovered",
-                        "value": "69 BC"
-                    },
-                    {
-                        "trait_type": "Found By",
-                        "value": "ved08"
-                    }
-                ]
-            }
-            const metadataUri = await umiBackend.uploader.uploadJson(metadata).catch(err => {throw new Error(err)})
-            // const metadataUri = "https://arweave.net/9ypjRmkaxsa5kZdmz0vDH3WcASN_VYW7LYNEeIEEhS4"
+            // const metadata = {
+            //     name: "Ancient Rug",
+            //     symbol: "RUG",
+            //     description: "An extremely rare ancient af rug minted using solana blink",
+            //     image: imageUri[0],
+            //     external_url: "https://x.com/ved08",
+            //     attributes: [
+            //         {
+            //             "trait_type": "Discovered",
+            //             "value": "69 BC"
+            //         },
+            //         {
+            //             "trait_type": "Found By",
+            //             "value": "ved08"
+            //         }
+            //     ]
+            // }
+            // const metadataUri = await umi.uploader.uploadJson(metadata).catch(err => {throw new Error(err)})
+            const metadataUri = "https://arweave.net/9ypjRmkaxsa5kZdmz0vDH3WcASN_VYW7LYNEeIEEhS4"
             
             try {   
 
