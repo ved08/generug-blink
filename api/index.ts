@@ -73,6 +73,7 @@ const umiBackend = createUmi("https://api.devnet.solana.com");
             
 
             const backendKeypair = umiBackend.eddsa.createKeypairFromSecretKey(new Uint8Array(wallet))
+            console.log(backendKeypair.publicKey)
             const backendSigner = createSignerFromKeypair(umiBackend, backendKeypair)
             umiBackend.use(signerIdentity(backendSigner))
 
