@@ -79,20 +79,39 @@ const umiBackend = createUmi("https://api.devnet.solana.com");
 
             // Generate a rug using puppeteer
             // STILL TODO AS UPLOADER REQUIRES SIGNATURE BUT WE DONT HAVE SIGNATURE WITHOUT EXECUTING BLINK
-            const browser = await puppeteer.launch({headless: true})
-            const page = await browser.newPage()
-            await page.goto("https://deanmlittle.github.io/generug/")
-            await page.waitForSelector('canvas')
-            const canvas = await page.$('canvas')
-            if(canvas) {
-                const imageBuffer = await canvas.screenshot({encoding: "binary"})
-                // Create new rug.png
-                fs.writeFileSync('rug.png', imageBuffer)
-            }
+            // const browser = await puppeteer.launch({headless: true})
+            // const page = await browser.newPage()
+            // await page.goto("https://deanmlittle.github.io/generug/")
+            // await page.waitForSelector('canvas')
+            // const canvas = await page.$('canvas')
+            // if(canvas) {
+            //     const imageBuffer = await canvas.screenshot({encoding: "binary"})
+            //     // Create new rug.png
+            //     fs.writeFileSync('rug.png', imageBuffer)
+            // }
+
+
+            const browser = await puppeteer.launch({ headless: true });
+        const page = await browser.newPage();
+
+        const client = await page.target().createCDPSession();
+        await client.send('Page.setDownloadBehavior', {
+          behavior: 'allow',
+          downloadPath: path.join(__dirname, "rug.png"),
+        });
+
+        // Configure the download behavior
+        await page.goto('https://deanmlittle.github.io/generug/', {
+          waitUntil: 'networkidle2',
+        });
+
+        const searchResultSelector = 'a#downloadLink';
+        await page.waitForSelector(searchResultSelector);
+        await page.click(searchResultSelector);
 
             // Upload image
             const imageFile = fs.readFileSync(
-                "rug.png"
+                path.join(__dirname, "/rug.png/generug.png")
             )
             const umiImageFile = createGenericFile(imageFile, 'rug.png', {
                 contentType: "image/png"
